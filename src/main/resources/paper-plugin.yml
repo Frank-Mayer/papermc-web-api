@@ -1,5 +1,9 @@
 name: papermc-web-api
 version: '${project.version}'
 main: io.frankmayer.papermcwebapi.Main
+description: Secure web api for Minecraft paper servers with OAuth2
+author: Frank Mayer
+website: https://github.com/Frank-Mayer/papermc-web-api
 api-version: '1.20'
-authors: ['Frank-Mayer']
+load: POSTWORLD
+prefix: PaperMCWebApi
