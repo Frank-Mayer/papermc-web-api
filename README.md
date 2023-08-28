@@ -6,7 +6,7 @@
 
 ## Requirements
 
-- [PaperMC](https://papermc.io/) server (look at the `api-version` in [`paper-plugin.yml`](https://github.com/Frank-Mayer/papermc-web-api/blob/main/src/main/resources/paper-plugin.yml) to see the minimum version.
+- [PaperMC](https://papermc.io/) server. Look at the `api-version` in [`paper-plugin.yml`](https://github.com/Frank-Mayer/papermc-web-api/blob/main/src/main/resources/paper-plugin.yml) to see the minimum version.
 
 ## Setup
 
