@@ -9,6 +9,45 @@ import java.util.UUID;
 import com.google.gson.GsonBuilder;
 
 public class Preferences {
+    public static class Client {
+        private String name;
+        private String id;
+        private String redirectUri;
+        private String[] permissions = new String[0];
+
+		public String getRedirectUri() {
+			return redirectUri;
+		}
+
+		public void setRedirectUri(final String redirectUri) {
+			this.redirectUri = redirectUri;
+		}
+
+        public String[] getPermissions() {
+			return permissions;
+		}
+
+		public void setPermissions(final String[] permissions) {
+			this.permissions = permissions;
+		}
+
+		public String getName() {
+            return name;
+        }
+
+        public void setName(final String name) {
+            this.name = name;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public void setId(final String id) {
+            this.id = id;
+        }
+    }
+
     public static Preferences load(final File folder) {
         if (!folder.exists()) {
             folder.mkdirs();
@@ -49,8 +88,17 @@ public class Preferences {
     private int httpPort = 8080;
     private String basePath = "";
     private String secret = Base64.getEncoder().encodeToString(UUID.randomUUID().toString().getBytes());
+    private Client[] clients = new Client[0];
 
-    public int getHttpPort() {
+    public Client[] getClients() {
+		return clients;
+	}
+
+	public void setClients(final Client[] clients) {
+		this.clients = clients;
+	}
+
+	public int getHttpPort() {
         return httpPort;
     }
 

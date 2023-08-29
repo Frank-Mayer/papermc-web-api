@@ -1,24 +1,29 @@
 package io.frankmayer.papermcwebapi;
 
-import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.net.URLDecoder;
+import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.bukkit.entity.Player;
+import org.bukkit.persistence.PersistentDataType;
+import org.jetbrains.annotations.NotNull;
+
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
-import io.frankmayer.papermcwebapi.backend.Player;
 import io.frankmayer.papermcwebapi.utils.Cached;
 import io.frankmayer.papermcwebapi.utils.JWT;
+import io.frankmayer.papermcwebapi.utils.NamespacedKeys;
 import io.frankmayer.papermcwebapi.utils.Posix;
 
 class HttpFrontend {
@@ -74,13 +79,84 @@ class HttpFrontend {
         public String get(final HttpExchange t) {
             final Map<String, List<String>> query = HttpFrontend.parseQueryParameters(t.getRequestURI().getQuery());
             final String clientId = HttpFrontend.firstOrThrow(query.get("client_id"), "client_id");
-            final Optional<String> redirectUri = HttpFrontend.firstOrNone(query.get("redirect_uri"));
-            final Optional<String> login = HttpFrontend.firstOrNone(query.get("login"));
-            // t.getResponseHeaders().add("Content-Type", "text/html");
-            t.getResponseHeaders().add("Content-Type", "text/plain");
-            final String[] x = new String[] { "client_id", clientId, "redirect_uri", redirectUri.orElse("null"), "login", login.orElse("null") };
-            final JWT<String[]> jwt = new JWT<>(x);
-            return jwt.toString();
+            final String login = HttpFrontend.firstOrThrow(query.get("login"), "login");
+            final Optional<String> codeIn = HttpFrontend.firstOrNone(query.get("code"));
+
+            if (codeIn.isPresent()) {
+                final Player bukkitPlayer = io.frankmayer.papermcwebapi.backend.Player.getBukkitPlayer(login);
+                if (bukkitPlayer == null) {
+                    throw new IllegalArgumentException("invalid login, not an online player");
+                }
+                final String code = bukkitPlayer.getPersistentDataContainer().get(NamespacedKeys.code(),
+                        PersistentDataType.STRING);
+                bukkitPlayer.getPersistentDataContainer().remove(NamespacedKeys.code());
+                if (!codeIn.get().equals(code)) {
+                    throw new IllegalArgumentException("invalid code");
+                }
+                final JWT.Response response = new JWT.Response(clientId, bukkitPlayer.getUniqueId().toString());
+                t.getResponseHeaders().add("Content-Type", "application/json");
+                bukkitPlayer.sendMessage("§lYou have been logged in successfully.");
+                return Main.GSON.toJson(response);
+            }
+
+            for (final var c : Main.PREFERENCES.getClients()) {
+                if (c.getId().equals(clientId)) {
+                    final Player bukkitPlayer = io.frankmayer.papermcwebapi.backend.Player.getBukkitPlayer(login);
+                    if (bukkitPlayer == null) {
+                        throw new IllegalArgumentException("invalid login, not an online player");
+                    }
+
+                    final String code = HttpFrontend.hash(login + Double.toString(Math.random()));
+                    bukkitPlayer.sendMessage(String.format(
+                            "Someone is trying to login as you on §9%s§r,\nYour code is §9%s§r.\nIf this was not you, please ignore this message.\nIf this was you, please enter the code on the website.",
+                            c.getName(), code));
+                    bukkitPlayer.getPersistentDataContainer().set(NamespacedKeys.code(), PersistentDataType.STRING,
+                            code);
+
+                    t.getResponseHeaders().add("Content-Type", "text/html");
+                    final StringBuilder perm = new StringBuilder();
+                    for (final var p : c.getPermissions()) {
+                        perm.append(String.format("<li>%s</li>", HttpFrontend.escapeHtml(p)));
+                    }
+                    return String.format(
+                            "<p>%s</p><p>%s</p><ul>%s</ul><p>We have sent you a code in the Minecraft chat, enter it here and confirm the login.</p><form action=\"%s\" method=\"get\"><input type=\"text\" name=\"code\" required/><input type=\"submit\" value=\"Login\"/><input type=\"hidden\" name=\"login\" value=\"%s\"/><input type=\"hidden\" name=\"client_id\" value=\"%s\"/></form>",
+                            String.format("Login as <b>%s<b>?", HttpFrontend.escapeHtml(bukkitPlayer.getName())),
+                            HttpFrontend.escapeHtml(
+                                    String.format("%s gets access to the following permissions:", c.getName())),
+                            perm.toString(),
+                            HttpFrontend.LISTENING + "authorize",
+                            login.replaceAll("\"", "&quot;"),
+                            clientId.replaceAll("\"", "&quot;"));
+                }
+            }
+            throw new IllegalArgumentException("invalid client_id");
+        }
+    }
+
+    private static MessageDigest md;
+
+    private static @NotNull String LISTENING;
+
+    public static String escapeHtml(final String format) {
+        return format.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
+    }
+
+    public static String hash(final String string) {
+        return Base64.getUrlEncoder().encodeToString(HttpFrontend.getMd().digest(string.getBytes())).substring(0, 4);
+    }
+
+    private static MessageDigest getMd() {
+        if (HttpFrontend.md != null) {
+            return HttpFrontend.md;
+        }
+
+        try {
+            HttpFrontend.md = MessageDigest.getInstance("MD2");
+            HttpFrontend.md.update("papermc-web-api".getBytes());
+            return HttpFrontend.md;
+        } catch (final Exception e) {
+            Main.panic("Failed to get MessageDigest", e);
+            return null;
         }
     }
 
@@ -110,7 +186,7 @@ class HttpFrontend {
                         final String key = URLDecoder.decode(keyValue[0], "UTF-8");
                         final String value = URLDecoder.decode(keyValue[1], "UTF-8");
                         queryParams.computeIfAbsent(key, k -> new ArrayList<>()).add(value);
-                    } catch (UnsupportedEncodingException e) {
+                    } catch (final UnsupportedEncodingException e) {
                         throw new IllegalArgumentException("Failed to decode query parameter", e);
                     }
                 }
@@ -133,7 +209,8 @@ class HttpFrontend {
             throw new RuntimeException(e);
         }
         try {
-            Main.LOGGER.info(String.format("Listening on http://localhost:%d%s", port, Posix.join("/", basePath, "/")));
+            HttpFrontend.LISTENING = String.format("http://localhost:%d%s", port, Posix.join("/", basePath, "/"));
+            Main.LOGGER.info("Listening on " + HttpFrontend.LISTENING);
             this.server.createContext(Posix.join("/", basePath, "/hello_world"), new HelloWorldHandler());
             this.server.createContext(Posix.join("/", basePath, "/online_players"), new OnlinePlayersHandler());
             this.server.createContext(Posix.join("/", basePath, "/authorize"), new AuthorizeHandler());

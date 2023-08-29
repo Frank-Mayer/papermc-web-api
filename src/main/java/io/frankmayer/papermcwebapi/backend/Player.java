@@ -1,5 +1,7 @@
 package io.frankmayer.papermcwebapi.backend;
 
+import java.util.UUID;
+
 import io.frankmayer.papermcwebapi.Main;
 
 public class Player {
@@ -8,6 +10,27 @@ public class Player {
                 .map(Player::new)
                 .toArray(Player[]::new);
         return Main.GSON.toJson(players);
+    }
+
+    public static org.bukkit.entity.Player getBukkitPlayer(final String player) {
+        try {
+            final UUID uuid = UUID.fromString(player);
+            final org.bukkit.entity.Player bukkitPlayer = Main.SERVER.getPlayer(uuid);
+            if (bukkitPlayer != null) {
+                return bukkitPlayer;
+            }
+        } catch (final Exception e) {
+        }
+
+        try {
+            final org.bukkit.entity.Player bukkitPlayer = Main.SERVER.getPlayer(player);
+            if (bukkitPlayer != null) {
+                return bukkitPlayer;
+            }
+        } catch (final Exception e) {
+        }
+
+        return null;
     }
 
     private String name;
@@ -27,11 +50,11 @@ public class Player {
         return uuid;
     }
 
-    protected void setName(String name) {
+    protected void setName(final String name) {
         this.name = name;
     }
 
-    protected void setUuid(String uuid) {
+    protected void setUuid(final String uuid) {
         this.uuid = uuid;
     }
 }

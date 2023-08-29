@@ -5,7 +5,7 @@ import java.util.Base64;
 
 import io.frankmayer.papermcwebapi.Main;
 
-public class JWT<Payload> {
+public class JWT {
     public static class Header {
         private final String alg = "HS512";
         private final String typ = "JWT";
@@ -16,6 +16,60 @@ public class JWT<Payload> {
 
         public String getTyp() {
             return typ;
+        }
+    }
+
+    public static class Payload {
+        private String tokenType;
+        private String clientId;
+        private String uuid;
+        private long iat;
+
+        public Payload(final String tokenType, final String clientId, final String uuid, final long duration) {
+            this.tokenType = tokenType;
+            this.clientId = clientId;
+            this.uuid = uuid;
+            this.iat = System.currentTimeMillis() / 1000L + duration;
+        }
+
+        public long getIat() {
+            return iat;
+        }
+
+        public void setIat(final long iat) {
+            this.iat = iat;
+        }
+
+        public String getTokenType() {
+            return tokenType;
+        }
+
+        public void setTokenType(final String tokenType) {
+            this.tokenType = tokenType;
+        }
+
+        public String getClientId() {
+            return clientId;
+        }
+
+        public void setClientId(final String clientId) {
+            this.clientId = clientId;
+        }
+
+        public String getUuid() {
+            return uuid;
+        }
+    }
+
+    public static class Response {
+        public final String refreshToken;
+        public final String accessToken;
+
+        public Response(final String clientId, final String uuid) {
+            final JWT refreshToken = new JWT(new Payload("refresh", clientId, uuid, 60 * 60 * 24 * 30)); // 30 days
+            final JWT accessToken = new JWT(new Payload("access", clientId, uuid, 60 * 60 * 24)); // 1 day
+            this.refreshToken = refreshToken.toString();
+            this.accessToken = accessToken.toString();
         }
     }
 
@@ -41,7 +95,7 @@ public class JWT<Payload> {
     }
 
     private static String hash(final String input) {
-        return JWT.getMd().digest(input.getBytes()).toString();
+        return Base64.getUrlEncoder().encodeToString(JWT.getMd().digest(input.getBytes()));
     }
 
     public final Header header;
@@ -53,10 +107,11 @@ public class JWT<Payload> {
     public JWT(final Payload payload) {
         this.header = new Header();
         this.payload = payload;
-        this.token = String.format("%s.%s.%s",
-                (Main.GSON.toJson(this.header)),
-                (Main.GSON.toJson(this.payload)),
-                (Main.PREFERENCES.getSecret()));
+        this.token = JWT.hash(
+                String.format("%s.%s.%s",
+                        JWT.base64UrlEncode(Main.GSON.toJson(this.header)),
+                        JWT.base64UrlEncode(Main.GSON.toJson(this.payload)),
+                        (Main.PREFERENCES.getSecret())));
     }
 
     @Override
