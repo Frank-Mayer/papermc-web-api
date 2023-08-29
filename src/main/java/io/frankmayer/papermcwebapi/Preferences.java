@@ -13,7 +13,7 @@ class Preferences {
             folder.mkdirs();
         }
 
-        final File file = new File(folder, "preferences.json");
+        final File file = new File(folder, "preferences.jsonc");
         final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
         try {
@@ -25,6 +25,8 @@ class Preferences {
                 }
             }
         } catch (final Exception e) {
+            Main.panic("Failed to load preferences", e);
+            return null;
         }
 
         // write using gson
@@ -38,6 +40,8 @@ class Preferences {
                 writer.write(json);
             }
         } catch (final Exception e) {
+            Main.panic("Failed to save preferences", e);
+            return null;
         }
         return preferences;
     }
