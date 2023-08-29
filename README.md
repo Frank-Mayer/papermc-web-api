@@ -13,7 +13,7 @@
 1. Download the latest [jar file](https://frank-mayer.github.io/papermc-web-api/papermc-web-api-1.0.jar) and put it into your plugins folder.
 1. Start the Paper server. This plugin will create a default config file for you.
 1. Stop the Paper server.
-1. Edit the config file. All options should be self-explanatory.
+1. Edit the config file. [Read the docs](https://github.com/Frank-Mayer/papermc-web-api/wiki/Preferences).
 1. You are good to go.
 
 ## Disclaimer
