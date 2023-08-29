@@ -10,6 +10,21 @@ public final class Main extends JavaPlugin {
     public static @NotNull Main INSTANCE;
     public static @NotNull Logger LOGGER;
 
+    public static void panic(final String string) {
+        Main.LOGGER.log(Level.WARNING, string);
+        Main.INSTANCE.getServer().getPluginManager().disablePlugin(Main.INSTANCE);
+    }
+
+    public static void panic(final String string, final Exception e) {
+        Main.LOGGER.log(Level.WARNING, string, e);
+        Main.INSTANCE.getServer().getPluginManager().disablePlugin(Main.INSTANCE);
+    }
+
+    public static void panic(final Exception e) {
+        Main.LOGGER.log(Level.WARNING, e.getMessage(), e);
+        Main.INSTANCE.getServer().getPluginManager().disablePlugin(Main.INSTANCE);
+    }
+
     private HttpFrontend httpFrontend;
 
     @Override
@@ -19,7 +34,7 @@ public final class Main extends JavaPlugin {
         Main.LOGGER = this.getLogger();
         final Preferences preferences = Preferences.load(this.getDataFolder());
         try {
-            this.httpFrontend = new HttpFrontend(preferences.getHttpPort());
+            this.httpFrontend = new HttpFrontend(preferences.getBasePath(), preferences.getHttpPort());
         } catch (final Exception e) {
             e.printStackTrace();
             this.getServer().getPluginManager().disablePlugin(this);
@@ -32,20 +47,5 @@ public final class Main extends JavaPlugin {
         if (this.httpFrontend != null) {
             this.httpFrontend.dispose();
         }
-    }
-
-    public static void panic(String string) {
-        Main.LOGGER.log(Level.WARNING, string);
-        Main.INSTANCE.getServer().getPluginManager().disablePlugin(Main.INSTANCE);
-    }
-
-    public static void panic(String string, Exception e) {
-        Main.LOGGER.log(Level.WARNING, string, e);
-        Main.INSTANCE.getServer().getPluginManager().disablePlugin(Main.INSTANCE);
-    }
-
-    public static void panic(Exception e) {
-        Main.LOGGER.log(Level.WARNING, e.getMessage(), e);
-        Main.INSTANCE.getServer().getPluginManager().disablePlugin(Main.INSTANCE);
     }
 }

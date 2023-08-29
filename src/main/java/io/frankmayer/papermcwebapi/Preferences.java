@@ -47,9 +47,18 @@ class Preferences {
     }
 
     private int httpPort = 8080;
+    private String basePath = "";
 
     public int getHttpPort() {
         return httpPort;
+    }
+
+    public String getBasePath() {
+        return basePath;
+    }
+
+    public void setBasePath(final String basePath) {
+        this.basePath = basePath;
     }
 
     protected void setHttpPort(final int httpPort) {
