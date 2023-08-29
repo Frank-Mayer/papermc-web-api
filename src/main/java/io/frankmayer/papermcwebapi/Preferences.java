@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 
+import com.google.gson.GsonBuilder;
+
 class Preferences {
     public static Preferences load(final File folder) {
         if (!folder.exists()) {
@@ -27,7 +29,7 @@ class Preferences {
 
         // write using gson
         final Preferences preferences = new Preferences();
-        final String json = Main.GSON.toJson(preferences);
+        final String json = new GsonBuilder().setPrettyPrinting().create().toJson(preferences);
         try {
             if (!file.exists()) {
                 file.createNewFile();
