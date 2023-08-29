@@ -4,9 +4,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
 class Preferences {
     public static Preferences load(final File folder) {
         if (!folder.exists()) {
@@ -14,13 +11,12 @@ class Preferences {
         }
 
         final File file = new File(folder, "preferences.jsonc");
-        final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
         try {
             if (file.exists()) {
                 // read using gson
                 try (final FileReader reader = new FileReader(file)) {
-                    final Preferences preferences = gson.fromJson(reader, Preferences.class);
+                    final Preferences preferences = Main.GSON.fromJson(reader, Preferences.class);
                     return preferences;
                 }
             }
@@ -31,7 +27,7 @@ class Preferences {
 
         // write using gson
         final Preferences preferences = new Preferences();
-        final String json = gson.toJson(preferences);
+        final String json = Main.GSON.toJson(preferences);
         try {
             if (!file.exists()) {
                 file.createNewFile();
