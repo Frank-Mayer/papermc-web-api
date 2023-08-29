@@ -8,9 +8,11 @@ public final class Main extends JavaPlugin {
     @Override
     public void onEnable() {
         // Plugin startup logic
+        final Preferences preferences = Preferences.load(this.getDataFolder());
+        this.getLogger().info("httpPort: " + preferences.getHttpPort());
         try {
-            this.httpFrontend = new HttpFrontend(8080);
-        } catch (Exception e) {
+            this.httpFrontend = new HttpFrontend(preferences.getHttpPort());
+        } catch (final Exception e) {
             e.printStackTrace();
             this.getServer().getPluginManager().disablePlugin(this);
         }
