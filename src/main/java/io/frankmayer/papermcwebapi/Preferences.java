@@ -3,10 +3,12 @@ package io.frankmayer.papermcwebapi;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.util.Base64;
+import java.util.UUID;
 
 import com.google.gson.GsonBuilder;
 
-class Preferences {
+public class Preferences {
     public static Preferences load(final File folder) {
         if (!folder.exists()) {
             folder.mkdirs();
@@ -46,6 +48,7 @@ class Preferences {
 
     private int httpPort = 8080;
     private String basePath = "";
+    private String secret = Base64.getEncoder().encodeToString(UUID.randomUUID().toString().getBytes());
 
     public int getHttpPort() {
         return httpPort;
@@ -55,11 +58,19 @@ class Preferences {
         return basePath;
     }
 
+    public String getSecret() {
+        return secret;
+    }
+
+    public void setHttpPort(final int httpPort) {
+        this.httpPort = httpPort;
+    }
+
     public void setBasePath(final String basePath) {
         this.basePath = basePath;
     }
 
-    protected void setHttpPort(final int httpPort) {
-        this.httpPort = httpPort;
+    public void setSecret(final String secret) {
+        this.secret = secret;
     }
 }

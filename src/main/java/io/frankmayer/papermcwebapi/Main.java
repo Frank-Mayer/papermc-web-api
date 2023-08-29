@@ -13,6 +13,7 @@ public final class Main extends JavaPlugin {
     public static @NotNull Main INSTANCE;
     public static @NotNull Logger LOGGER;
     public static @NotNull Server SERVER;
+    public static @NotNull Preferences PREFERENCES;
     public static @NotNull final Gson GSON = new Gson();
 
     public static void panic(final String string) {
@@ -38,9 +39,9 @@ public final class Main extends JavaPlugin {
         Main.INSTANCE = this;
         Main.LOGGER = this.getLogger();
         Main.SERVER = this.getServer();
-        final Preferences preferences = Preferences.load(this.getDataFolder());
+        Main.PREFERENCES = Preferences.load(this.getDataFolder());
         try {
-            this.httpFrontend = new HttpFrontend(preferences.getBasePath(), preferences.getHttpPort());
+            this.httpFrontend = new HttpFrontend(Main.PREFERENCES.getBasePath(), Main.PREFERENCES.getHttpPort());
         } catch (final Exception e) {
             e.printStackTrace();
             this.getServer().getPluginManager().disablePlugin(this);
