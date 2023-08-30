@@ -151,9 +151,6 @@ public class JWT {
                 }
             }
 
-            Main.LOGGER.info("Access Token: " + accessToken);
-            Main.LOGGER.info("Refresh Token: " + refreshToken);
-
             // maybe update the access token
             if (accessToken == null || accessToken.payload.exp < System.currentTimeMillis()) {
                 if (refreshToken == null || refreshToken.payload.exp < System.currentTimeMillis()) {
@@ -242,8 +239,6 @@ public class JWT {
         // test
         final String testToken = this.makeToken();
         if (!testToken.equals(token)) {
-            Main.LOGGER.info("A: '" + token + "'");
-            Main.LOGGER.info("B: '" + testToken + "'");
             throw new IllegalArgumentException("Invalid token: signature mismatch");
         }
     }

@@ -18,23 +18,23 @@ public class Preferences {
         private String redirectUri;
         private String[] permissions = new String[0];
 
-		public String getRedirectUri() {
-			return redirectUri;
-		}
+        public String getRedirectUri() {
+            return redirectUri;
+        }
 
-		public void setRedirectUri(final String redirectUri) {
-			this.redirectUri = redirectUri;
-		}
+        public void setRedirectUri(final String redirectUri) {
+            this.redirectUri = redirectUri;
+        }
 
         public String[] getPermissions() {
-			return permissions;
-		}
+            return permissions;
+        }
 
-		public void setPermissions(final String[] permissions) {
-			this.permissions = permissions;
-		}
+        public void setPermissions(final String[] permissions) {
+            this.permissions = permissions;
+        }
 
-		public String getName() {
+        public String getName() {
             return name;
         }
 
@@ -94,14 +94,14 @@ public class Preferences {
     private Client[] clients = new Client[0];
 
     public Client[] getClients() {
-		return clients;
-	}
+        return clients;
+    }
 
-	public void setClients(final Client[] clients) {
-		this.clients = clients;
-	}
+    public void setClients(final Client[] clients) {
+        this.clients = clients;
+    }
 
-	public int getHttpPort() {
+    public int getHttpPort() {
         return httpPort;
     }
 
@@ -125,7 +125,7 @@ public class Preferences {
         this.secret = secret;
     }
 
-    public Optional<Client> getClientById(String clientId) {
+    public Optional<Client> getClientById(final String clientId) {
         for (final Client client : this.clients) {
             if (client.getId().equals(clientId)) {
                 return Optional.of(client);
