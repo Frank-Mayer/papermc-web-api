@@ -1,6 +1,5 @@
 package io.frankmayer.papermcwebapi.utils;
 
-import java.net.HttpCookie;
 import java.security.MessageDigest;
 import java.text.SimpleDateFormat;
 import java.util.Base64;
@@ -14,11 +13,20 @@ import com.sun.net.httpserver.HttpExchange;
 
 import io.frankmayer.papermcwebapi.HttpFrontend;
 import io.frankmayer.papermcwebapi.Main;
+import io.frankmayer.papermcwebapi.backend.Player;
 
 public class JWT {
     public static class Header {
-        private final String alg = "HS512";
-        private final String typ = "JWT";
+        private String typ = "JWT";
+        private String alg = "HS512";
+
+        public void setAlg(final String alg) {
+            this.alg = alg;
+        }
+
+        public void setTyp(final String typ) {
+            this.typ = typ;
+        }
 
         public String getAlg() {
             return alg;
@@ -32,7 +40,7 @@ public class JWT {
     public static class Payload {
         private String tokenType;
         private String clientId;
-        private final String uuid;
+        private String uuid;
         private long iat;
         private long exp;
 
@@ -42,6 +50,10 @@ public class JWT {
             this.uuid = uuid;
             this.iat = System.currentTimeMillis();
             this.exp = this.iat + (duration * 1000);
+        }
+
+        public void setUuid(final String uuid) {
+            this.uuid = uuid;
         }
 
         public long getExp() {
@@ -150,10 +162,10 @@ public class JWT {
                 final var response = new Response(refreshToken.payload.clientId,
                         refreshToken.payload.uuid);
                 HttpFrontend.sendJWT(t, response);
-                return Main.SERVER.getOfflinePlayer(refreshToken.payload.uuid);
+                return Player.getBukkitOfflinePlayer(refreshToken.payload.uuid);
             }
 
-            return Main.SERVER.getOfflinePlayer(accessToken.payload.uuid);
+            return Player.getBukkitOfflinePlayer(accessToken.payload.uuid);
         } catch (final Exception e) {
             Main.LOGGER.warning("Failed to process auth: " + e.getMessage());
             e.printStackTrace();
@@ -193,21 +205,6 @@ public class JWT {
     public final Payload payload;
 
     public final String token;
-
-    private String makeToken() {
-        final String h = JWT.base64UrlEncode(Main.GSON.toJson(this.header));
-        final String p = JWT.base64UrlEncode(Main.GSON.toJson(this.payload));
-
-        final String sign = JWT.hash(
-                String.format("%s.%s.%s",
-                        h, p,
-                        (Main.PREFERENCES.getSecret())));
-
-        return JWT.base64UrlEncode(
-                String.format("%s.%s.%s",
-                        h, p, sign));
-
-    }
 
     public JWT(final Payload payload) {
         this.header = new Header();
@@ -254,5 +251,20 @@ public class JWT {
     @Override
     public String toString() {
         return this.token;
+    }
+
+    private String makeToken() {
+        final String h = JWT.base64UrlEncode(Main.GSON.toJson(this.header));
+        final String p = JWT.base64UrlEncode(Main.GSON.toJson(this.payload));
+
+        final String sign = JWT.hash(
+                String.format("%s.%s.%s",
+                        h, p,
+                        (Main.PREFERENCES.getSecret())));
+
+        return JWT.base64UrlEncode(
+                String.format("%s.%s.%s",
+                        h, p, sign));
+
     }
 }

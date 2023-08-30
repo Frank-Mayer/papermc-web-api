@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataType;
@@ -163,6 +164,22 @@ public class HttpFrontend {
         }
     }
 
+    private static class CommandHandler extends HttpHandlerWrapper {
+        public String get(final HttpExchange t, final OfflinePlayer authorized) {
+            if (authorized == null) {
+                throw new UnauthorizedException("not authorized");
+            }
+            final Player onlinePlayer = authorized.getPlayer();
+            if (onlinePlayer == null) {
+                throw new IllegalArgumentException("player is not online");
+            }
+            final Map<String, List<String>> query = HttpFrontend.parseQueryParameters(t.getRequestURI().getQuery());
+            final String command = HttpFrontend.firstOrThrow(query.get("command"), "command");
+            Bukkit.getScheduler().runTask(Main.INSTANCE, () -> onlinePlayer.performCommand(command));
+            return "OK";
+        }
+    }
+
     private static MessageDigest md;
 
     private static @NotNull String LISTENING;
@@ -257,6 +274,7 @@ public class HttpFrontend {
             this.server.createContext(Posix.join("/", basePath, "/online_players"), new OnlinePlayersHandler());
             this.server.createContext(Posix.join("/", basePath, "/authorize"), new AuthorizeHandler());
             this.server.createContext(Posix.join("/", basePath, "/profile_picture"), new ProfilePictureHandler());
+            this.server.createContext(Posix.join("/", basePath, "/command"), new CommandHandler());
             this.server.setExecutor(null);
             this.server.start();
         } catch (final Exception e) {

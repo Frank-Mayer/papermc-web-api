@@ -2,6 +2,8 @@ package io.frankmayer.papermcwebapi.backend;
 
 import java.util.UUID;
 
+import org.bukkit.OfflinePlayer;
+
 import io.frankmayer.papermcwebapi.Main;
 
 public class Player {
@@ -24,6 +26,27 @@ public class Player {
 
         try {
             final org.bukkit.entity.Player bukkitPlayer = Main.SERVER.getPlayer(player);
+            if (bukkitPlayer != null) {
+                return bukkitPlayer;
+            }
+        } catch (final Exception e) {
+        }
+
+        return null;
+    }
+
+    public static OfflinePlayer getBukkitOfflinePlayer(final String player) {
+        try {
+            final UUID uuid = UUID.fromString(player);
+            final OfflinePlayer bukkitPlayer = Main.SERVER.getOfflinePlayer(uuid);
+            if (bukkitPlayer != null) {
+                return bukkitPlayer;
+            }
+        } catch (final Exception e) {
+        }
+
+        try {
+            final OfflinePlayer bukkitPlayer = Main.SERVER.getOfflinePlayer(player);
             if (bukkitPlayer != null) {
                 return bukkitPlayer;
             }
