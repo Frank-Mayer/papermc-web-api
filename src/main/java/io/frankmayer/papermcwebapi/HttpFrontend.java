@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
@@ -21,45 +22,54 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
+import io.frankmayer.papermcwebapi.exceptions.UnauthorizedException;
 import io.frankmayer.papermcwebapi.utils.Cached;
 import io.frankmayer.papermcwebapi.utils.JWT;
 import io.frankmayer.papermcwebapi.utils.NamespacedKeys;
 import io.frankmayer.papermcwebapi.utils.Posix;
+import io.frankmayer.papermcwebapi.utils.Str;
 
-class HttpFrontend {
+public class HttpFrontend {
     private static abstract class HttpHandlerWrapper implements HttpHandler {
-        private String response = "";
-        private OutputStream os = null;
-        private int statusCode = 200;
 
         @Override
         public void handle(final HttpExchange t) {
+            String response = "";
+            OutputStream os = null;
+            int statusCode = 200;
+            final OfflinePlayer authorized = JWT.processAuth(t);
             try {
-                this.response = this.get(t);
-                this.statusCode = 200;
+                response = this.get(t, authorized);
+                statusCode = 200;
             } catch (final IllegalArgumentException e) {
-                this.response = e.getMessage();
-                this.statusCode = 400;
+                response = e.getMessage();
+                statusCode = 400;
+            } catch (final UnauthorizedException e) {
+                response = e.getMessage();
+                statusCode = 401;
             } catch (final Exception e) {
-                this.response = e.getMessage();
-                this.statusCode = 500;
+                response = e.getMessage();
+                statusCode = 500;
             } finally {
                 try {
-                    t.sendResponseHeaders(this.statusCode, this.response.length());
-                    this.os = t.getResponseBody();
-                    this.os.write(this.response.getBytes());
-                    this.os.close();
+                    if (t.getResponseHeaders().containsKey("Location")) {
+                        statusCode = 302;
+                    }
+                    t.sendResponseHeaders(statusCode, response.length());
+                    os = t.getResponseBody();
+                    os.write(response.getBytes());
+                    os.close();
                 } catch (final Exception e) {
                     Main.panic("Failed to write response body", e);
                 }
             }
         }
 
-        protected abstract String get(final HttpExchange t) throws Exception;
+        protected abstract String get(final HttpExchange t, final OfflinePlayer authorized) throws Exception;
     }
 
     private static class HelloWorldHandler extends HttpHandlerWrapper {
-        public String get(final HttpExchange t) {
+        public String get(final HttpExchange t, final OfflinePlayer authorized) {
             t.getResponseHeaders().add("Cache-Control", "max-age=10");
             return "Hello World!";
         }
@@ -68,7 +78,7 @@ class HttpFrontend {
     private static class OnlinePlayersHandler extends HttpHandlerWrapper {
         private final Cached<String> cached = new Cached<>(5000);
 
-        public String get(final HttpExchange t) {
+        public String get(final HttpExchange t, final OfflinePlayer authorized) {
             t.getResponseHeaders().add("Cache-Control", "max-age=5");
             t.getResponseHeaders().add("Content-Type", "application/json");
             return this.cached.get(io.frankmayer.papermcwebapi.backend.Player::getOnlinePlayers);
@@ -76,12 +86,13 @@ class HttpFrontend {
     }
 
     private static class AuthorizeHandler extends HttpHandlerWrapper {
-        public String get(final HttpExchange t) {
+        public String get(final HttpExchange t, final OfflinePlayer authorized) {
             final Map<String, List<String>> query = HttpFrontend.parseQueryParameters(t.getRequestURI().getQuery());
             final String clientId = HttpFrontend.firstOrThrow(query.get("client_id"), "client_id");
             final String login = HttpFrontend.firstOrThrow(query.get("login"), "login");
             final Optional<String> codeIn = HttpFrontend.firstOrNone(query.get("code"));
 
+            // is this a phase 2 request?
             if (codeIn.isPresent()) {
                 final Player bukkitPlayer = io.frankmayer.papermcwebapi.backend.Player.getBukkitPlayer(login);
                 if (bukkitPlayer == null) {
@@ -95,10 +106,13 @@ class HttpFrontend {
                 }
                 final JWT.Response response = new JWT.Response(clientId, bukkitPlayer.getUniqueId().toString());
                 t.getResponseHeaders().add("Content-Type", "application/json");
-                bukkitPlayer.sendMessage("§lYou have been logged in successfully.");
+                bukkitPlayer.sendMessage("§2You have been logged in successfully.");
+                t.getResponseHeaders().add("Location", Main.PREFERENCES.getClientById(clientId).get().getRedirectUri());
+                HttpFrontend.sendJWT(t, response);
                 return Main.GSON.toJson(response);
             }
 
+            // this is a phase 1 request
             for (final var c : Main.PREFERENCES.getClients()) {
                 if (c.getId().equals(clientId)) {
                     final Player bukkitPlayer = io.frankmayer.papermcwebapi.backend.Player.getBukkitPlayer(login);
@@ -133,9 +147,37 @@ class HttpFrontend {
         }
     }
 
+    private static class ProfilePictureHandler extends HttpHandlerWrapper {
+        public String get(final HttpExchange t, final OfflinePlayer authorized) {
+            if (authorized == null) {
+                throw new UnauthorizedException("not authorized");
+            }
+            final var respHeaders = t.getResponseHeaders();
+            respHeaders.add("Cache-Control", "max-age=3600");
+            final String url = "https://mc-heads.net/head/" + authorized.getName();
+            respHeaders.add("Location", url);
+            return String.format(
+                    "<img src=\"%s\" alt=\"%s\" loading=\"lazy\" decoding=\"async\"/>",
+                    url,
+                    authorized.getName().replaceAll("\"", "&quot;"));
+        }
+    }
+
     private static MessageDigest md;
 
     private static @NotNull String LISTENING;
+
+    public static void sendJWT(final HttpExchange t, final JWT.Response resp) {
+        final var headers = t.getResponseHeaders();
+        headers.add("Set-Cookie", String.format("refresh_token=%s;Expires=%s;Path=%s;HttpOnly",
+                resp.refreshToken,
+                resp.refreshExpires,
+                Main.PREFERENCES.getBasePath()));
+        headers.add("Set-Cookie", String.format("access_token=%s;Expires=%s;Path=%s;HttpOnly",
+                resp.accessToken,
+                resp.accessExpires,
+                Main.PREFERENCES.getBasePath()));
+    }
 
     public static String escapeHtml(final String format) {
         return format.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
@@ -178,13 +220,13 @@ class HttpFrontend {
         final Map<String, List<String>> queryParams = new LinkedHashMap<>();
 
         if (query != null) {
-            final String[] pairs = query.split("&");
+            final List<String> pairs = Str.split(query, '&');
             for (final String pair : pairs) {
-                final String[] keyValue = pair.split("=");
-                if (keyValue.length == 2) {
+                final List<String> keyValue = Str.split(pair, '=');
+                if (keyValue.size() == 2) {
                     try {
-                        final String key = URLDecoder.decode(keyValue[0], "UTF-8");
-                        final String value = URLDecoder.decode(keyValue[1], "UTF-8");
+                        final String key = URLDecoder.decode(keyValue.get(0), "UTF-8");
+                        final String value = URLDecoder.decode(keyValue.get(1), "UTF-8");
                         queryParams.computeIfAbsent(key, k -> new ArrayList<>()).add(value);
                     } catch (final UnsupportedEncodingException e) {
                         throw new IllegalArgumentException("Failed to decode query parameter", e);
@@ -214,6 +256,7 @@ class HttpFrontend {
             this.server.createContext(Posix.join("/", basePath, "/hello_world"), new HelloWorldHandler());
             this.server.createContext(Posix.join("/", basePath, "/online_players"), new OnlinePlayersHandler());
             this.server.createContext(Posix.join("/", basePath, "/authorize"), new AuthorizeHandler());
+            this.server.createContext(Posix.join("/", basePath, "/profile_picture"), new ProfilePictureHandler());
             this.server.setExecutor(null);
             this.server.start();
         } catch (final Exception e) {

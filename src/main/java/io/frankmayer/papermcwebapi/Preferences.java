@@ -4,9 +4,12 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.Base64;
+import java.util.Optional;
 import java.util.UUID;
 
 import com.google.gson.GsonBuilder;
+
+import io.frankmayer.papermcwebapi.utils.Posix;
 
 public class Preferences {
     public static class Client {
@@ -87,7 +90,7 @@ public class Preferences {
 
     private int httpPort = 8080;
     private String basePath = "";
-    private String secret = Base64.getEncoder().encodeToString(UUID.randomUUID().toString().getBytes());
+    private String secret = Base64.getUrlEncoder().encodeToString(UUID.randomUUID().toString().getBytes());
     private Client[] clients = new Client[0];
 
     public Client[] getClients() {
@@ -103,7 +106,7 @@ public class Preferences {
     }
 
     public String getBasePath() {
-        return basePath;
+        return Posix.join("/", basePath);
     }
 
     public String getSecret() {
@@ -120,5 +123,14 @@ public class Preferences {
 
     public void setSecret(final String secret) {
         this.secret = secret;
+    }
+
+    public Optional<Client> getClientById(String clientId) {
+        for (final Client client : this.clients) {
+            if (client.getId().equals(clientId)) {
+                return Optional.of(client);
+            }
+        }
+        return Optional.empty();
     }
 }
