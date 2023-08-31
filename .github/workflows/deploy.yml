@@ -32,6 +32,8 @@ jobs:
           cache: maven
       - name: Build with Maven
         run: mvn -B package --file pom.xml
+      - name: Rename jar file
+        run: mv ./target/papermc-web-api-*.jar ./target/papermc-web-api.jar
       - name: Setup Pages
         uses: actions/configure-pages@v3
       - name: Upload artifact
