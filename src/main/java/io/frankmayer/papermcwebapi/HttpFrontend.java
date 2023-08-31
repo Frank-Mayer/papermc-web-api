@@ -124,7 +124,7 @@ public class HttpFrontend {
             this.server.createContext(Posix.join("/", basePath, "/online_players"), new OnlinePlayersHandler());
             this.server.createContext(Posix.join("/", basePath, "/authorize"), new AuthorizeHandler());
             this.server.createContext(Posix.join("/", basePath, "/profile_picture"), new ProfilePictureHandler());
-            this.server.createContext(Posix.join("/", basePath, "/command"), new CommandHandler());
+            this.server.createContext(Posix.join("/", basePath, "/execute"), new CommandHandler());
             this.server.setExecutor(null);
             this.server.start();
         } catch (final Exception e) {
