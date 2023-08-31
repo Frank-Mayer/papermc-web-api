@@ -1,6 +1,6 @@
-package io.frankmayer.papermcwebapi;
+package io.frankmayer.papermcwebapi.utils;
 
-class Posix {
+public class Posix {
     public static String join(final String... strings) {
         final StringBuilder sb = new StringBuilder();
         boolean slash = false;
