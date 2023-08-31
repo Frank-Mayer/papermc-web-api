@@ -16,7 +16,7 @@ public class Preferences {
         private String name;
         private String id;
         private String redirectUri;
-        private String[] permissions = new String[0];
+        private String[] scopes = new String[0];
 
         public String getRedirectUri() {
             return redirectUri;
@@ -26,12 +26,12 @@ public class Preferences {
             this.redirectUri = redirectUri;
         }
 
-        public String[] getPermissions() {
-            return permissions;
+        public String[] getScopes() {
+            return scopes;
         }
 
-        public void setPermissions(final String[] permissions) {
-            this.permissions = permissions;
+        public void setScopes(final String[] scopes) {
+            this.scopes = scopes;
         }
 
         public String getName() {

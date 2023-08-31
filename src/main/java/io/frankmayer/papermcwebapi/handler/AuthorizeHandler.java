@@ -59,7 +59,7 @@ public class AuthorizeHandler extends HttpHandlerWrapper {
 
                 t.getResponseHeaders().add("Content-Type", "text/html");
                 final StringBuilder perm = new StringBuilder();
-                for (final var p : c.getPermissions()) {
+                for (final var p : c.getScopes()) {
                     perm.append(String.format("<li>%s</li>", HttpFrontend.escapeHtml(p)));
                 }
                 return String.format(
