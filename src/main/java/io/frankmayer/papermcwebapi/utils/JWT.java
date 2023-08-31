@@ -124,10 +124,12 @@ public class JWT {
         try {
             final Map<String, List<String>> headers = t.getRequestHeaders();
             if (!headers.containsKey("Cookie")) {
+                Main.LOGGER.warning("No cookie header");
                 return null;
             }
             final List<String> cookies = headers.get("Cookie");
             if (cookies.size() == 0) {
+                Main.LOGGER.warning("Empty cookie header");
                 return null;
             }
 
@@ -163,14 +165,15 @@ public class JWT {
             }
 
             return Player.getBukkitOfflinePlayer(accessToken.payload.uuid);
+        } catch (final IllegalArgumentException e) {
+            throw e;
         } catch (final Exception e) {
             Main.LOGGER.warning("Failed to process auth: " + e.getMessage());
-            e.printStackTrace();
             return null;
         }
     }
 
-    private static MessageDigest getMd() {
+    public static MessageDigest getMd() {
         if (JWT.md != null) {
             return JWT.md;
         }
@@ -186,7 +189,7 @@ public class JWT {
     }
 
     private static String base64UrlEncode(final String input) {
-        return Base64.getUrlEncoder().encodeToString(input.getBytes());
+        return Str.exclude(Base64.getUrlEncoder().encodeToString(input.getBytes()), '=');
     }
 
     private static String base64UrlDecode(final String token) throws IllegalArgumentException {
@@ -194,7 +197,7 @@ public class JWT {
     }
 
     private static String hash(final String input) {
-        return Base64.getUrlEncoder().encodeToString(JWT.getMd().digest(input.getBytes()));
+        return Str.exclude(Base64.getUrlEncoder().encodeToString(JWT.getMd().digest(input.getBytes())), '=');
     }
 
     public final Header header;

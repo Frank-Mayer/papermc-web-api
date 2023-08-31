@@ -5,10 +5,10 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.Base64;
 import java.util.Optional;
-import java.util.UUID;
 
 import com.google.gson.GsonBuilder;
 
+import io.frankmayer.papermcwebapi.utils.JWT;
 import io.frankmayer.papermcwebapi.utils.Posix;
 
 public class Preferences {
@@ -90,7 +90,13 @@ public class Preferences {
 
     private int httpPort = 8080;
     private String basePath = "";
-    private String secret = Base64.getUrlEncoder().encodeToString(UUID.randomUUID().toString().getBytes());
+    private String secret = Base64.getUrlEncoder().encodeToString(
+            JWT.getMd().digest(
+                    Double.toString(Math.random()).getBytes()))
+            +
+            Base64.getUrlEncoder().encodeToString(
+                    JWT.getMd().digest(
+                            Double.toString(Math.random()).getBytes()));
     private Client[] clients = new Client[0];
 
     public Client[] getClients() {

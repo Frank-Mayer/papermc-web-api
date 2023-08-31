@@ -12,10 +12,21 @@ import com.sun.net.httpserver.HttpExchange;
 
 import io.frankmayer.papermcwebapi.HttpFrontend;
 import io.frankmayer.papermcwebapi.Main;
+import io.frankmayer.papermcwebapi.utils.HtmlTemplate;
 import io.frankmayer.papermcwebapi.utils.JWT;
 import io.frankmayer.papermcwebapi.utils.NamespacedKeys;
 
 public class AuthorizeHandler extends HttpHandlerWrapper {
+    private static final HtmlTemplate LOGIN_TEMPLATE = new HtmlTemplate()
+            .p("%s").p("%s").ul("%s")
+            .p("We have sent you a code in the Minecraft chat, enter it here and confirm the login.")
+            .form("get", "%s", false,
+                    new HtmlTemplate()
+                            .input("text", "code", true)
+                            .input("submit", null, false, "Login")
+                            .input("hidden", "login", true, "%s")
+                            .input("hidden", "client_id", true, "%s"));
+
     public String get(final HttpExchange t, final OfflinePlayer authorized) {
         final Map<String, List<String>> query = HttpFrontend.parseQueryParameters(t.getRequestURI().getQuery());
         final String clientId = HttpFrontend.firstOrThrow(query.get("client_id"), "client_id");
@@ -24,25 +35,14 @@ public class AuthorizeHandler extends HttpHandlerWrapper {
 
         // is this a phase 2 request?
         if (codeIn.isPresent()) {
-            final Player bukkitPlayer = io.frankmayer.papermcwebapi.backend.Player.getBukkitPlayer(login);
-            if (bukkitPlayer == null) {
-                throw new IllegalArgumentException("invalid login, not an online player");
-            }
-            final String code = bukkitPlayer.getPersistentDataContainer().get(NamespacedKeys.code(),
-                    PersistentDataType.STRING);
-            bukkitPlayer.getPersistentDataContainer().remove(NamespacedKeys.code());
-            if (!codeIn.get().equals(code)) {
-                throw new IllegalArgumentException("invalid code");
-            }
-            final JWT.Response response = new JWT.Response(clientId, bukkitPlayer.getUniqueId().toString());
-            t.getResponseHeaders().add("Content-Type", "application/json");
-            bukkitPlayer.sendMessage("§2You have been logged in successfully.");
-            t.getResponseHeaders().add("Location", Main.PREFERENCES.getClientById(clientId).get().getRedirectUri());
-            HttpFrontend.sendJWT(t, response);
-            return Main.GSON.toJson(response);
+            return phaseTwoRequest(t, clientId, login, codeIn.get());
         }
 
         // this is a phase 1 request
+        return phaseOneRequest(t, clientId, login);
+    }
+
+    private String phaseOneRequest(final HttpExchange t, final String clientId, final String login) {
         for (final var c : Main.PREFERENCES.getClients()) {
             if (c.getId().equals(clientId)) {
                 final Player bukkitPlayer = io.frankmayer.papermcwebapi.backend.Player.getBukkitPlayer(login);
@@ -58,21 +58,39 @@ public class AuthorizeHandler extends HttpHandlerWrapper {
                         code);
 
                 t.getResponseHeaders().add("Content-Type", "text/html");
-                final StringBuilder perm = new StringBuilder();
-                for (final var p : c.getScopes()) {
-                    perm.append(String.format("<li>%s</li>", HttpFrontend.escapeHtml(p)));
-                }
-                return String.format(
-                        "<p>%s</p><p>%s</p><ul>%s</ul><p>We have sent you a code in the Minecraft chat, enter it here and confirm the login.</p><form autocomplete=\"off\" action=\"%s\" method=\"get\"><input type=\"text\" name=\"code\" required/><input type=\"submit\" value=\"Login\"/><input type=\"hidden\" name=\"login\" value=\"%s\"/><input type=\"hidden\" name=\"client_id\" value=\"%s\"/></form>",
+                return LOGIN_TEMPLATE.process(
                         String.format("Login as <b>%s<b>?", HttpFrontend.escapeHtml(bukkitPlayer.getName())),
                         HttpFrontend.escapeHtml(
                                 String.format("%s gets access to the following permissions:", c.getName())),
-                        perm.toString(),
+                        HtmlTemplate.li(c.getScopes()),
                         HttpFrontend.LISTENING + "authorize",
                         HttpFrontend.escapeHtmlParam(login),
                         HttpFrontend.escapeHtmlParam(clientId));
             }
         }
         throw new IllegalArgumentException("invalid client_id");
+    }
+
+    private String phaseTwoRequest(
+            final HttpExchange t,
+            final String clientId,
+            final String login,
+            final String codeIn) {
+        final Player bukkitPlayer = io.frankmayer.papermcwebapi.backend.Player.getBukkitPlayer(login);
+        if (bukkitPlayer == null) {
+            throw new IllegalArgumentException("invalid login, not an online player");
+        }
+        final String code = bukkitPlayer.getPersistentDataContainer().get(NamespacedKeys.code(),
+                PersistentDataType.STRING);
+        bukkitPlayer.getPersistentDataContainer().remove(NamespacedKeys.code());
+        if (!codeIn.equals(code)) {
+            throw new IllegalArgumentException("invalid code");
+        }
+        final JWT.Response response = new JWT.Response(clientId, bukkitPlayer.getUniqueId().toString());
+        t.getResponseHeaders().add("Content-Type", "application/json");
+        bukkitPlayer.sendMessage("§2You have been logged in successfully.");
+        t.getResponseHeaders().add("Location", Main.PREFERENCES.getClientById(clientId).get().getRedirectUri());
+        HttpFrontend.sendJWT(t, response);
+        return Main.GSON.toJson(response);
     }
 }

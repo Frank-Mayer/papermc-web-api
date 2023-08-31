@@ -22,7 +22,7 @@ public class Cached<T> {
                 this.lastUpdate = now;
             } catch (final Exception e) {
                 Main.LOGGER.warning("Failed to update cached value: " + e.getMessage());
-                if((++this.failCount) > 5) {
+                if ((++this.failCount) > 5) {
                     Main.panic(String.format("Failed to update cached value %d times", this.failCount));
                 }
             }
