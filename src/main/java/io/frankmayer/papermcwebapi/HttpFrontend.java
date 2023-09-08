@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.jetbrains.annotations.NotNull;
+import org.reflections.Reflections;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
@@ -20,6 +21,7 @@ import com.sun.net.httpserver.HttpServer;
 import io.frankmayer.papermcwebapi.handler.AuthorizeHandler;
 import io.frankmayer.papermcwebapi.handler.CommandHandler;
 import io.frankmayer.papermcwebapi.handler.HelloWorldHandler;
+import io.frankmayer.papermcwebapi.handler.HttpHandlerWrapper;
 import io.frankmayer.papermcwebapi.handler.OnlinePlayersHandler;
 import io.frankmayer.papermcwebapi.handler.ProfilePictureHandler;
 import io.frankmayer.papermcwebapi.utils.JWT;
@@ -118,13 +120,13 @@ public class HttpFrontend {
             throw new RuntimeException(e);
         }
         try {
+            Reflections reflections = new Reflections("io.frankmayer.papermcwebapi.handler");
             HttpFrontend.LISTENING = String.format("http://localhost:%d%s", port, Path.join("/", basePath, "/"));
             Main.LOGGER.info("Listening on " + HttpFrontend.LISTENING);
-            this.server.createContext(Path.join("/", basePath, "/hello_world"), new HelloWorldHandler());
-            this.server.createContext(Path.join("/", basePath, "/online_players"), new OnlinePlayersHandler());
-            this.server.createContext(Path.join("/", basePath, "/authorize"), new AuthorizeHandler());
-            this.server.createContext(Path.join("/", basePath, "/profile_picture"), new ProfilePictureHandler());
-            this.server.createContext(Path.join("/", basePath, "/execute"), new CommandHandler());
+            for(var Handler : reflections.getSubTypesOf(HttpHandlerWrapper.class)) {
+                var handler = Handler.getDeclaredConstructor().newInstance();
+                this.server.createContext(Path.join("/", basePath, "/", handler.getRoute()), handler);
+            }
             this.server.setExecutor(null);
             this.server.start();
         } catch (final Exception e) {

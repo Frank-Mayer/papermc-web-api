@@ -27,6 +27,10 @@ public class AuthorizeHandler extends HttpHandlerWrapper {
                             .input("hidden", "login", true, "%s")
                             .input("hidden", "client_id", true, "%s"));
 
+    public String getRoute() {
+        return "authorize";
+    }
+
     public String get(final HttpExchange t, final OfflinePlayer authorized) {
         final Map<String, List<String>> query = HttpFrontend.parseQueryParameters(t.getRequestURI().getQuery());
         final String clientId = HttpFrontend.firstOrThrow(query.get("client_id"), "client_id");

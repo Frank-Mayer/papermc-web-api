@@ -11,8 +11,7 @@ import io.frankmayer.papermcwebapi.Main;
 import io.frankmayer.papermcwebapi.exceptions.UnauthorizedException;
 import io.frankmayer.papermcwebapi.utils.JWT;
 
-abstract class HttpHandlerWrapper implements HttpHandler {
-
+public abstract class HttpHandlerWrapper implements HttpHandler {
     @Override
     public void handle(final HttpExchange t) {
         String response = "";
@@ -47,4 +46,6 @@ abstract class HttpHandlerWrapper implements HttpHandler {
     }
 
     protected abstract String get(final HttpExchange t, final OfflinePlayer authorized) throws Exception;
+
+    public abstract String getRoute();
 }

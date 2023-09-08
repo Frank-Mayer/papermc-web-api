@@ -8,6 +8,10 @@ import io.frankmayer.papermcwebapi.HttpFrontend;
 import io.frankmayer.papermcwebapi.exceptions.UnauthorizedException;
 
 public class ProfilePictureHandler extends HttpHandlerWrapper {
+    public String getRoute() {
+        return "profile_picture";
+    }
+
     public String get(final HttpExchange t, final OfflinePlayer authorized) {
         if (authorized == null) {
             throw new UnauthorizedException("not authorized");

@@ -14,6 +14,10 @@ import io.frankmayer.papermcwebapi.Main;
 import io.frankmayer.papermcwebapi.exceptions.UnauthorizedException;
 
 public class CommandHandler extends HttpHandlerWrapper {
+    public String getRoute() {
+        return "execute";
+    }
+
     public String get(final HttpExchange t, final OfflinePlayer authorized) {
         if (authorized == null) {
             throw new UnauthorizedException("not authorized");
