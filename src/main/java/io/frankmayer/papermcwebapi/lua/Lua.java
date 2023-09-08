@@ -9,6 +9,7 @@ import org.bukkit.OfflinePlayer;
 import org.jetbrains.annotations.NotNull;
 import org.luaj.vm2.Globals;
 import org.luaj.vm2.LuaError;
+import org.luaj.vm2.LuaString;
 import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.lib.jse.JsePlatform;
@@ -36,6 +37,8 @@ public class Lua {
 
     public static Globals init() {
         final Globals globals = JsePlatform.standardGlobals();
+
+        // Register the Paper API
         final LuaTable paper = new LuaTable();
         final Reflections reflections = new Reflections("io.frankmayer.papermcwebapi.lua");
         for (final var luaValueClass : reflections.getSubTypesOf(LuaValue.class)) {
@@ -48,13 +51,24 @@ public class Lua {
             }
         }
         globals.set("Paper", paper);
+
+        // register ./plugins/PaperMCWebAPI/lua/ as a lua path
         final File dir = Paths.get(Main.INSTANCE.getDataFolder().getAbsolutePath(), "lua").toFile();
         if (!dir.exists()) {
             dir.mkdirs();
         }
+        // set package.path to include the lua directory
+        final LuaValue packageTable = globals.get("package");
+        packageTable.set("path", LuaString.valueOf(Paths.get(dir.getAbsolutePath(), "?.lua").toString()));
+
+        // Load the init.lua file
         final File init = Paths.get(dir.getAbsolutePath(), "init.lua").toFile();
         if (init.exists()) {
-            globals.loadfile(init.getAbsolutePath()).call();
+            try {
+                globals.loadfile(init.getAbsolutePath()).call();
+            } catch (final Exception e) {
+                Main.panic(e);
+            }
         }
         return globals;
     }

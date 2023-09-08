@@ -128,7 +128,9 @@ public class HttpFrontend {
             Main.LOGGER.info("Listening on " + HttpFrontend.LISTENING);
             for (final var handlerClass : reflections.getSubTypesOf(HttpHandlerWrapper.class)) {
                 final var handler = handlerClass.getDeclaredConstructor().newInstance();
-                this.server.createContext(Path.joinPosix("/", basePath, "/", handler.getRoute()), handler);
+                final String route = Path.joinPosix("/", basePath, "/", handler.getRoute());
+                Main.LOGGER.info(String.format("Registering HTTP handler %s", route));
+                this.server.createContext(route, handler);
             }
             this.server.setExecutor(null);
             this.server.start();

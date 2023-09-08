@@ -40,6 +40,36 @@ public class Str {
         return sb.toString();
     }
 
+    public static String replace(final String text, final char c, final char replacement) {
+        final StringBuilder sb = new StringBuilder(text.length());
+        for (final char ch : text.toCharArray()) {
+            if (ch == c) {
+                sb.append(replacement);
+            } else {
+                sb.append(ch);
+            }
+        }
+        return sb.toString();
+    }
+
+    public static String replace(final String text, final String c, final String replacement) {
+        final StringBuilder sb = new StringBuilder(text.length());
+        for (final char ch : text.toCharArray()) {
+            if (c.indexOf(ch) != -1) {
+                sb.append(replacement);
+            } else {
+                sb.append(ch);
+            }
+        }
+        return sb.toString();
+    }
+
     private Str() {
+    }
+
+    public static String quote(String string) {
+        return '"' +
+                Str.replace(Str.replace(string, "\\", "\\\\"), "\"", "\\\"") +
+                '"';
     }
 }

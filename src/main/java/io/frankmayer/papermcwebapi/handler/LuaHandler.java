@@ -45,20 +45,16 @@ public class LuaHandler extends HttpHandlerWrapper {
         final String script = HttpFrontend.firstOrThrow(query, "script");
 
         if (Lua.scriptExists(script)) {
-            Main.LOGGER.info(String.format("Executing Lua script %s", script));
             final var r = new LuaHandler.Response(Lua.runScript(script, authorized));
             t.getResponseHeaders().add("Content-Type", "application/json");
             return Main.GSON.toJson(r);
         }
 
         if (LuaHandler.customCodeAllowed(authorized)) {
-            Main.LOGGER.info(String.format("Executing Lua source: %s", script));
             final var r = new LuaHandler.Response(Lua.exec(script));
             t.getResponseHeaders().add("Content-Type", "application/json");
             return Main.GSON.toJson(r);
         }
-
-        Main.LOGGER.info(String.format("Lua script %s not found", script));
 
         throw new IllegalArgumentException(String.format("script %s not found", script));
     }
