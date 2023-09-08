@@ -9,7 +9,7 @@ import java.util.Optional;
 import com.google.gson.GsonBuilder;
 
 import io.frankmayer.papermcwebapi.utils.JWT;
-import io.frankmayer.papermcwebapi.utils.Posix;
+import io.frankmayer.papermcwebapi.utils.Path;
 
 public class Preferences {
     public static class Client {
@@ -112,7 +112,7 @@ public class Preferences {
     }
 
     public String getBasePath() {
-        return Posix.join("/", basePath);
+        return Path.join("/", basePath);
     }
 
     public String getSecret() {

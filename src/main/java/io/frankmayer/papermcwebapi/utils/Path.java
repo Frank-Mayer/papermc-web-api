@@ -1,6 +1,6 @@
 package io.frankmayer.papermcwebapi.utils;
 
-public class Posix {
+public class Path {
     public static String join(final String... strings) {
         final StringBuilder sb = new StringBuilder();
         boolean slash = false;
@@ -20,6 +20,6 @@ public class Posix {
         return sb.toString();
     }
 
-    private Posix() {
+    private Path() {
     }
 }
