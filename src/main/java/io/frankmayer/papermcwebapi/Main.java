@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 
 import com.google.gson.Gson;
 
+import io.frankmayer.papermcwebapi.lua.Lua;
 import io.frankmayer.papermcwebapi.lua.LuaCommand;
 
 public final class Main extends JavaPlugin {
@@ -43,7 +44,10 @@ public final class Main extends JavaPlugin {
         Main.SERVER = this.getServer();
         Main.PREFERENCES = Preferences.load(this.getDataFolder());
         try {
-            Main.SERVER.getCommandMap().register("lua", new LuaCommand());
+            Lua.init();
+            if (Main.PREFERENCES.getLuaCmd()) {
+                Main.SERVER.getCommandMap().register("lua", new LuaCommand());
+            }
             this.httpFrontend = new HttpFrontend(Main.PREFERENCES.getBasePath(), Main.PREFERENCES.getHttpPort());
         } catch (final Exception e) {
             e.printStackTrace();

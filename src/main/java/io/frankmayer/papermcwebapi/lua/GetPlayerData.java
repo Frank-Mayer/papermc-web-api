@@ -9,8 +9,6 @@ import io.frankmayer.papermcwebapi.Main;
 import io.frankmayer.papermcwebapi.utils.NamespacedKeys;
 
 class GetPlayerData extends ThreeArgFunction {
-    public static final String NAME = "getPlayerData";
-
     @Override
     public LuaValue call(final LuaValue player, final LuaValue key, final LuaValue type) {
         try {

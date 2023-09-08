@@ -33,9 +33,9 @@ public class AuthorizeHandler extends HttpHandlerWrapper {
 
     public String get(final HttpExchange t, final OfflinePlayer authorized) {
         final Map<String, List<String>> query = HttpFrontend.parseQueryParameters(t.getRequestURI().getQuery());
-        final String clientId = HttpFrontend.firstOrThrow(query.get("client_id"), "client_id");
-        final String login = HttpFrontend.firstOrThrow(query.get("login"), "login");
-        final Optional<String> codeIn = HttpFrontend.firstOrNone(query.get("code"));
+        final String clientId = HttpFrontend.firstOrThrow(query, "client_id");
+        final String login = HttpFrontend.firstOrThrow(query, "login");
+        final Optional<String> codeIn = HttpFrontend.firstOrNone(query, "code");
 
         // is this a phase 2 request?
         if (codeIn.isPresent()) {

@@ -36,6 +36,9 @@ public class Player {
     }
 
     public static OfflinePlayer getBukkitOfflinePlayer(final String player) {
+        final var onlinePlayer = Player.getBukkitPlayer(player);
+        if (onlinePlayer != null) return onlinePlayer;
+
         try {
             final UUID uuid = UUID.fromString(player);
             final OfflinePlayer bukkitPlayer = Main.SERVER.getOfflinePlayer(uuid);

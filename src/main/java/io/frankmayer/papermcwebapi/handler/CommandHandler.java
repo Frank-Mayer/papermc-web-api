@@ -27,7 +27,7 @@ public class CommandHandler extends HttpHandlerWrapper {
             throw new IllegalArgumentException("player is not online");
         }
         final Map<String, List<String>> query = HttpFrontend.parseQueryParameters(t.getRequestURI().getQuery());
-        final String command = HttpFrontend.firstOrThrow(query.get("command"), "command");
+        final String command = HttpFrontend.firstOrThrow(query, "command");
         Bukkit.getScheduler().runTask(Main.INSTANCE, () -> onlinePlayer.performCommand(command));
         return "OK";
     }

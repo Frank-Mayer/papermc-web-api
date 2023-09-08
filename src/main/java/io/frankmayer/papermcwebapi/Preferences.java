@@ -98,6 +98,15 @@ public class Preferences {
                     JWT.getMd().digest(
                             Double.toString(Math.random()).getBytes()));
     private Client[] clients = new Client[0];
+    private boolean luaCmd = false;
+
+    public boolean getLuaCmd() {
+        return this.luaCmd;
+    }
+
+    public void setLuaCmd(final boolean enabled) {
+        this.luaCmd = enabled;
+    }
 
     public Client[] getClients() {
         return clients;
@@ -112,7 +121,7 @@ public class Preferences {
     }
 
     public String getBasePath() {
-        return Path.join("/", basePath);
+        return Path.joinPosix("/", basePath);
     }
 
     public String getSecret() {

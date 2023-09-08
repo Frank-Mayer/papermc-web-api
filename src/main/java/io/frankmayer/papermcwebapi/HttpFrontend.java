@@ -18,12 +18,7 @@ import org.reflections.Reflections;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 
-import io.frankmayer.papermcwebapi.handler.AuthorizeHandler;
-import io.frankmayer.papermcwebapi.handler.CommandHandler;
-import io.frankmayer.papermcwebapi.handler.HelloWorldHandler;
 import io.frankmayer.papermcwebapi.handler.HttpHandlerWrapper;
-import io.frankmayer.papermcwebapi.handler.OnlinePlayersHandler;
-import io.frankmayer.papermcwebapi.handler.ProfilePictureHandler;
 import io.frankmayer.papermcwebapi.utils.JWT;
 import io.frankmayer.papermcwebapi.utils.Path;
 import io.frankmayer.papermcwebapi.utils.Str;
@@ -56,18 +51,12 @@ public class HttpFrontend {
         return Base64.getUrlEncoder().encodeToString(HttpFrontend.getMd().digest(string.getBytes())).substring(0, 4);
     }
 
-    public static <T> T firstOrThrow(final List<T> list, final String name) {
-        if (list == null || list.size() != 1) {
-            throw new IllegalArgumentException("please provide exactly one " + name);
-        }
-        return list.get(0);
+    public static <T> T firstOrThrow(final Map<String, List<T>> query, final String key) {
+        return HttpFrontend.firstOrThrow(query.get(key), key);
     }
 
-    public static <T> Optional<T> firstOrNone(final List<T> list) {
-        if (list == null || list.size() != 1) {
-            return Optional.empty();
-        }
-        return Optional.of(list.get(0));
+    public static <T> Optional<T> firstOrNone(final Map<String, List<T>> query, final String key) {
+        return HttpFrontend.firstOrNone(query.get(key));
     }
 
     public static Map<String, List<String>> parseQueryParameters(final String query) {
@@ -90,6 +79,20 @@ public class HttpFrontend {
         }
 
         return queryParams;
+    }
+
+    private static <T> Optional<T> firstOrNone(final List<T> list) {
+        if (list == null || list.size() != 1) {
+            return Optional.empty();
+        }
+        return Optional.of(list.get(0));
+    }
+
+    private static <T> T firstOrThrow(final List<T> list, final String name) {
+        if (list == null || list.size() != 1) {
+            throw new IllegalArgumentException("please provide exactly one " + name);
+        }
+        return list.get(0);
     }
 
     private static MessageDigest getMd() {
@@ -120,12 +123,12 @@ public class HttpFrontend {
             throw new RuntimeException(e);
         }
         try {
-            Reflections reflections = new Reflections("io.frankmayer.papermcwebapi.handler");
-            HttpFrontend.LISTENING = String.format("http://localhost:%d%s", port, Path.join("/", basePath, "/"));
+            final Reflections reflections = new Reflections("io.frankmayer.papermcwebapi.handler");
+            HttpFrontend.LISTENING = String.format("http://localhost:%d%s", port, Path.joinPosix("/", basePath, "/"));
             Main.LOGGER.info("Listening on " + HttpFrontend.LISTENING);
-            for(var Handler : reflections.getSubTypesOf(HttpHandlerWrapper.class)) {
-                var handler = Handler.getDeclaredConstructor().newInstance();
-                this.server.createContext(Path.join("/", basePath, "/", handler.getRoute()), handler);
+            for (final var handlerClass : reflections.getSubTypesOf(HttpHandlerWrapper.class)) {
+                final var handler = handlerClass.getDeclaredConstructor().newInstance();
+                this.server.createContext(Path.joinPosix("/", basePath, "/", handler.getRoute()), handler);
             }
             this.server.setExecutor(null);
             this.server.start();

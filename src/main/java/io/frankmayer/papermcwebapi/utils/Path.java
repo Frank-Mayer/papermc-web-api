@@ -1,7 +1,7 @@
 package io.frankmayer.papermcwebapi.utils;
 
 public class Path {
-    public static String join(final String... strings) {
+    public static String joinPosix(final String... strings) {
         final StringBuilder sb = new StringBuilder();
         boolean slash = false;
         for (final String string : strings) {
