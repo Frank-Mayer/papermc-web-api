@@ -59,6 +59,19 @@ public class Player {
         return null;
     }
 
+    public static void sendMessage(final String receiver, final String message) {
+        final var bukkitPlayer = Player.getBukkitPlayer(receiver);
+        if (bukkitPlayer != null) {
+            bukkitPlayer.sendMessage(message);
+        }
+    }
+
+    public static void broadcastMessage(final String message) {
+        for (final var player : Main.SERVER.getOnlinePlayers()) {
+            player.sendMessage(message);
+        }
+	}
+
     private String name;
 
     private String uuid;
@@ -80,7 +93,7 @@ public class Player {
         this.name = name;
     }
 
-    protected void setUuid(final String uuid) {
+	protected void setUuid(final String uuid) {
         this.uuid = uuid;
     }
 }
