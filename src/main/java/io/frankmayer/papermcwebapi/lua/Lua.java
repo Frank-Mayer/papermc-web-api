@@ -45,7 +45,7 @@ public class Lua {
             try {
                 final String name = Lua.pascalToCamelCase(luaValueClass.getSimpleName());
                 final LuaValue instance = luaValueClass.getDeclaredConstructor().newInstance();
-                Main.LOGGER.info(String.format("Registering Lua API function %s", name));
+                Main.LOGGER.info(String.format("Registering Lua API <%s>", name));
                 paper.set(name, instance);
             } catch (final Exception ignored) {
             }
