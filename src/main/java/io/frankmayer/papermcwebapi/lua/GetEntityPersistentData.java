@@ -14,6 +14,35 @@ import io.frankmayer.papermcwebapi.utils.NamespacedKeys;
 class GetEntityPersistentData extends ThreeArgFunction {
     @Override
     public LuaValue call(final LuaValue entity, final LuaValue key, final LuaValue type) {
+        if (entity.isnil() || key.isnil() || type.isnil()) {
+            return LuaValue.NIL;
+        }
+
+        if (key.istable() || key.isfunction()) {
+            throw new IllegalArgumentException(String.format(
+                    "Invalid key: %s for lua function getPlayerData",
+                    Inspect.inspect(key)));
+        }
+
+        if (type.istable() || type.isfunction()) {
+            throw new IllegalArgumentException(String.format(
+                    "Invalid type: %s for lua function getPlayerData",
+                    Inspect.inspect(type)));
+        }
+
+        if (entity.istable()) {
+            final var names = new LuaTable();
+            int i = 1;
+            for (final LuaValue e : new TableIterable(entity.checktable())) {
+                names.set(i++, this.call(e, key, type));
+            }
+            return names;
+        }
+
+        if (entity.isfunction()) {
+            return this.call(entity.checkfunction().call(), key, type);
+        }
+
         try {
             final var uuid = UUID.fromString(entity.checkjstring());
             final Entity bukkitEntity = Main.SERVER.getEntity(uuid);
@@ -121,7 +150,7 @@ class GetEntityPersistentData extends ThreeArgFunction {
                 default: {
                     throw new IllegalArgumentException(String.format(
                             "Invalid type: %s for lua function getPlayerData",
-                            type.checkjstring()));
+                            Inspect.inspect(type)));
                 }
             }
         } catch (final Exception e) {

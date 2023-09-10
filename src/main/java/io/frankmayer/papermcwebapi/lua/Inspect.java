@@ -23,11 +23,15 @@ public class Inspect extends OneArgFunction {
         }
     }
 
-    private static String inspect(final LuaValue arg) {
-        return Inspect.inspect(arg, 1);
+    public static String inspect(final LuaValue arg) {
+        return Inspect.inspect(arg, 1, false);
     }
 
-    private static String inspect(final LuaValue arg, final int depth) {
+    public static String inspect(final LuaValue arg, final boolean newLines) {
+        return Inspect.inspect(arg, 1, newLines);
+    }
+
+    private static String inspect(final LuaValue arg, final int depth, final boolean newLines) {
         if (arg.isnil()) {
             return Inspect.NIL;
         } else if (arg.isboolean()) {
@@ -42,7 +46,11 @@ public class Inspect extends OneArgFunction {
             return Inspect.THREAD;
         } else if (arg.istable()) {
             final StringBuilder sb = new StringBuilder();
-            sb.append("{\n");
+            if (newLines) {
+                sb.append("{\n");
+            } else {
+                sb.append("{");
+            }
             LuaValue key = LuaValue.NIL;
             while (true) {
                 final Varargs n = arg.next(key);
@@ -54,9 +62,13 @@ public class Inspect extends OneArgFunction {
                 sb.append(Inspect.smartQuote(key.tojstring()));
                 sb.append(']');
                 sb.append(" = ");
-                final String inspectedValue = Inspect.inspect(value, depth + 1);
+                final String inspectedValue = Inspect.inspect(value, depth + 1, newLines);
                 sb.append(inspectedValue);
-                sb.append(",\n");
+                if (newLines) {
+                    sb.append(",\n");
+                } else {
+                    sb.append(", ");
+                }
             }
             Inspect.appendIndentDepth(sb, depth - 1);
             sb.append('}');
@@ -94,7 +106,7 @@ public class Inspect extends OneArgFunction {
 
     @Override
     public LuaString call(final LuaValue arg) {
-        return LuaString.valueOf(Inspect.inspect(arg));
+        return LuaString.valueOf(Inspect.inspect(arg, true));
     }
 
 }
