@@ -6,9 +6,12 @@ import java.util.logging.Logger;
 import org.bukkit.Server;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
+import org.reflections.Reflections;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
+import io.frankmayer.papermcwebapi.gson.GsonEnhancement;
 import io.frankmayer.papermcwebapi.lua.Lua;
 import io.frankmayer.papermcwebapi.lua.LuaCommand;
 
@@ -17,7 +20,7 @@ public final class Main extends JavaPlugin {
     public static @NotNull Logger LOGGER;
     public static @NotNull Server SERVER;
     public static @NotNull Preferences PREFERENCES;
-    public static @NotNull final Gson GSON = new Gson();
+    public static @NotNull Gson GSON;
 
     public static void panic(final String string) {
         Main.LOGGER.log(Level.WARNING, string);
@@ -36,12 +39,30 @@ public final class Main extends JavaPlugin {
 
     private HttpFrontend httpFrontend;
 
+    public Main() {
+        Main.INSTANCE = this;
+    }
+
     @Override
     public void onEnable() {
         // Plugin startup logic
-        Main.INSTANCE = this;
         Main.LOGGER = this.getLogger();
         Main.SERVER = this.getServer();
+
+        final var g = new GsonBuilder();
+        final var refl = new Reflections("io.frankmayer.papermcwebapi.gson");
+        final var adapters = refl.getSubTypesOf(GsonEnhancement.class);
+        for (final var taClass : adapters) {
+			try {
+				final var ta = taClass.getDeclaredConstructor().newInstance();
+                Main.LOGGER.log(Level.INFO, "Registering GsonEnhancement: " + ta.forType.getName());
+                g.registerTypeAdapter(ta.forType, ta);
+			} catch (final Exception e) {
+				Main.panic(e);
+			}
+        }
+        Main.GSON = g.create();
+
         Main.PREFERENCES = Preferences.load(this.getDataFolder());
         try {
             Lua.init();
