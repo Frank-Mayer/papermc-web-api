@@ -8,7 +8,7 @@ import com.google.gson.stream.JsonWriter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.json.JSONComponentSerializer;
 
-public class KyoriComponent extends GsonEnhancement<net.kyori.adventure.text.Component> {
+public class KyoriComponent extends GsonEnhancement<Component> {
     public KyoriComponent() {
         super(Component.class);
     }

@@ -15,6 +15,7 @@ import io.frankmayer.papermcwebapi.Main;
 import io.frankmayer.papermcwebapi.utils.HtmlTemplate;
 import io.frankmayer.papermcwebapi.utils.JWT;
 import io.frankmayer.papermcwebapi.utils.NamespacedKeys;
+import io.frankmayer.papermcwebapi.utils.JWT.Response;
 
 public class AuthorizeHandler extends HttpHandlerWrapper {
     private static final HtmlTemplate LOGIN_TEMPLATE = new HtmlTemplate()
@@ -31,7 +32,7 @@ public class AuthorizeHandler extends HttpHandlerWrapper {
         return "authorize";
     }
 
-    public String get(final HttpExchange t, final OfflinePlayer authorized) {
+    public Object get(final HttpExchange t, final OfflinePlayer authorized) {
         final Map<String, List<String>> query = HttpFrontend.parseQueryParameters(t.getRequestURI().getQuery());
         final String clientId = HttpFrontend.firstOrThrow(query, "client_id");
         final String login = HttpFrontend.firstOrThrow(query, "login");
@@ -75,7 +76,7 @@ public class AuthorizeHandler extends HttpHandlerWrapper {
         throw new IllegalArgumentException("invalid client_id");
     }
 
-    private String phaseTwoRequest(
+    private Response phaseTwoRequest(
             final HttpExchange t,
             final String clientId,
             final String login,
@@ -91,10 +92,9 @@ public class AuthorizeHandler extends HttpHandlerWrapper {
             throw new IllegalArgumentException("invalid code");
         }
         final JWT.Response response = new JWT.Response(clientId, bukkitPlayer.getUniqueId().toString());
-        t.getResponseHeaders().add("Content-Type", "application/json");
         bukkitPlayer.sendMessage("§2You have been logged in successfully.");
         t.getResponseHeaders().add("Location", Main.PREFERENCES.getClientById(clientId).get().getRedirectUri());
         HttpFrontend.sendJWT(t, response);
-        return Main.GSON.toJson(response);
+        return response;
     }
 }

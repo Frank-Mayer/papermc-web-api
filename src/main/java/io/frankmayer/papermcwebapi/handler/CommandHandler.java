@@ -18,7 +18,7 @@ public class CommandHandler extends HttpHandlerWrapper {
         return "execute";
     }
 
-    public String get(final HttpExchange t, final OfflinePlayer authorized) {
+    public Object get(final HttpExchange t, final OfflinePlayer authorized) {
         if (authorized == null) {
             throw new UnauthorizedException("not authorized");
         }
@@ -29,6 +29,6 @@ public class CommandHandler extends HttpHandlerWrapper {
         final Map<String, List<String>> query = HttpFrontend.parseQueryParameters(t.getRequestURI().getQuery());
         final String command = HttpFrontend.firstOrThrow(query, "command");
         Bukkit.getScheduler().runTask(Main.INSTANCE, () -> onlinePlayer.performCommand(command));
-        return "OK";
+        return null;
     }
 }
