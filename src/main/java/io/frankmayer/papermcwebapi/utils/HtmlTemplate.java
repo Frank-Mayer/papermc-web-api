@@ -1,25 +1,34 @@
 package io.frankmayer.papermcwebapi.utils;
 
+import io.frankmayer.papermcwebapi.HttpFrontend;
+
 public class HtmlTemplate {
-    public static String li(final Iterable<String> values) {
+    public static String li(final String className, final Iterable<String> values) {
         final StringBuilder sb = new StringBuilder();
         for (final String scope : values) {
-            sb.append("<li>").append(scope).append("</li>");
+            sb.append("<li class=\"").append(HttpFrontend.escapeHtml(className)).append("\">").append(scope).append("</li>");
         }
         return sb.toString();
     }
 
-    public static String li(final String... values) {
+    public static String li(final String className, final String[] values) {
         final StringBuilder sb = new StringBuilder();
         for (final String scope : values) {
-            sb.append("<li>").append(scope).append("</li>");
+            sb.append("<li class=\"").append(HttpFrontend.escapeHtml(className)).append("\">").append(scope).append("</li>");
         }
         return sb.toString();
     }
 
     private final StringBuilder body = new StringBuilder();
 
+    private final String mainClass;
+
+    public HtmlTemplate(final String mainClass) {
+        this.mainClass = mainClass;
+    }
+
     public HtmlTemplate() {
+        this.mainClass = "";
     }
 
     public HtmlTemplate append(final String value) {
@@ -28,29 +37,38 @@ public class HtmlTemplate {
     }
 
     public String process(final Object... args) {
-        return Str.html(String.format(this.body.toString(), args));
+        return Str.html("<main class=\"" + HttpFrontend.escapeHtml(this.mainClass) + "\">" +
+                String.format(this.body.toString(), args)
+                + "</main>");
     }
 
     @Override
     public String toString() {
-        return Str.html(this.body.toString());
+        return this.body.toString();
     }
 
-    public HtmlTemplate p(final Object content) {
-        return this.append("<p>").append(content.toString()).append("</p>");
+    public HtmlTemplate p(final String className, final Object content) {
+        return this.append("<p class=\"").append(HttpFrontend.escapeHtml(className)).append("\">")
+                .append(content.toString())
+                .append("</p>");
     }
 
-    public HtmlTemplate ul(final Object content) {
-        return this.append("<ul>").append(content.toString()).append("</ul>");
+    public HtmlTemplate ul(final String className, final Object content) {
+        return this.append("<ul class=\"").append(HttpFrontend.escapeHtml(className)).append("\">")
+                .append(content.toString())
+                .append("</ul>");
     }
 
-    public HtmlTemplate form(final String method,
+    public HtmlTemplate form(
+            final String className,
+            final String method,
             final String action,
             final boolean autocomplete,
             final Object content) {
         return this.append(
                 String.format(
-                        "<form method=\"%s\" action=\"%s\"%s>",
+                        "<form class=\"%s\" method=\"%s\" action=\"%s\"%s>",
+                        HttpFrontend.escapeHtml(className),
                         method,
                         action,
                         autocomplete ? "" : " autocomplete=\"off\""))
@@ -58,22 +76,19 @@ public class HtmlTemplate {
                 .append("</form>");
     }
 
-    public HtmlTemplate input(final String type, final String name, final boolean required, final String value) {
+    public HtmlTemplate input(
+            final String className,
+            final String type,
+            final String name,
+            final boolean required,
+            final String value) {
         return this.append(
                 String.format(
-                        "<input type=\"%s\" name=\"%s\" value=\"%s\"%s/>",
+                        "<input class=\"%s\" type=\"%s\" name=\"%s\" value=\"%s\"%s/>",
+                        className == null ? "" : HttpFrontend.escapeHtml(className),
                         type == null ? "text" : type,
                         name == null ? "" : name,
                         value == null ? "" : value,
-                        required ? " required" : ""));
-    }
-
-    public HtmlTemplate input(final String type, final String name, final boolean required) {
-        return this.append(
-                String.format(
-                        "<input type=\"%s\" name=\"%s\"%s/>",
-                        type,
-                        name,
                         required ? " required" : ""));
     }
 }

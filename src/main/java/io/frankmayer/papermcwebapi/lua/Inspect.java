@@ -5,6 +5,8 @@ import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
 import org.luaj.vm2.lib.OneArgFunction;
 
+import io.frankmayer.papermcwebapi.utils.Str;
+
 /**
  * Gets a human-readable string representation of the given object.
  */
@@ -39,7 +41,7 @@ public class Inspect extends OneArgFunction {
         } else if (arg.isnumber()) {
             return arg.tojstring();
         } else if (arg.isstring()) {
-            return Inspect.smartQuote(arg.tojstring());
+            return Str.smartQuote(arg.tojstring());
         } else if (arg.isfunction()) {
             return String.format("function %s", arg.checkfunction().name());
         } else if (arg.isthread()) {
@@ -59,7 +61,7 @@ public class Inspect extends OneArgFunction {
                 final LuaValue value = n.arg(2);
                 Inspect.appendIndentDepth(sb, depth);
                 sb.append('[');
-                sb.append(Inspect.smartQuote(key.tojstring()));
+                sb.append(Str.smartQuote(key.tojstring()));
                 sb.append(']');
                 sb.append(" = ");
                 final String inspectedValue = Inspect.inspect(value, depth + 1, newLines);
@@ -76,32 +78,6 @@ public class Inspect extends OneArgFunction {
         } else {
             return Inspect.UNKNOWN;
         }
-    }
-
-    private static String smartQuote(final String str) {
-        final StringBuilder sb = new StringBuilder(str.length() + 2);
-        sb.append('"');
-        for (int i = 0; i < str.length(); i++) {
-            final char c = str.charAt(i);
-            switch (c) {
-                case '"':
-                    sb.append("\\\"");
-                    break;
-                case '\n':
-                    sb.append("\\n");
-                    break;
-                case '\r':
-                    sb.append("\\r");
-                    break;
-                case '\t':
-                    sb.append("\\t");
-                    break;
-                default:
-                    sb.append(c);
-            }
-        }
-        sb.append('"');
-        return sb.toString();
     }
 
     @Override

@@ -18,15 +18,15 @@ import io.frankmayer.papermcwebapi.utils.NamespacedKeys;
 import io.frankmayer.papermcwebapi.utils.JWT.Response;
 
 public class AuthorizeHandler extends HttpHandlerWrapper {
-    private static final HtmlTemplate LOGIN_TEMPLATE = new HtmlTemplate()
-            .p("%s").p("%s").ul("%s")
-            .p("We have sent you a code in the Minecraft chat, enter it here and confirm the login.")
-            .form("get", "%s", false,
+    private static final HtmlTemplate LOGIN_TEMPLATE = new HtmlTemplate("auth")
+            .p("login-message", "%s").p("permission-message", "%s").ul("permission-list", "%s")
+            .p("code-message", "We have sent you a code in the Minecraft chat, enter it here and confirm the login.")
+            .form("code-form", "get", "%s", false,
                     new HtmlTemplate()
-                            .input("text", "code", true)
-                            .input("submit", null, false, "Login")
-                            .input("hidden", "login", true, "%s")
-                            .input("hidden", "client_id", true, "%s"));
+                            .input("code-form__input", "text", "code", true, null)
+                            .input("code-form__button", "submit", null, false, "Login")
+                            .input(null, "hidden", "login", true, "%s")
+                            .input(null, "hidden", "client_id", true, "%s"));
 
     public String getRoute() {
         return "authorize";
@@ -64,11 +64,14 @@ public class AuthorizeHandler extends HttpHandlerWrapper {
 
                 t.getResponseHeaders().add("Content-Type", "text/html");
                 return LOGIN_TEMPLATE.process(
-                        String.format("Login as <b>%s<b>?", HttpFrontend.escapeHtml(bukkitPlayer.getName())),
-                        HttpFrontend.escapeHtml(
-                                String.format("%s gets access to the following permissions:", c.getName())),
-                        HtmlTemplate.li(c.getScopes()),
-                        HttpFrontend.LISTENING + "authorize",
+                        String.format(
+                                "Login as <span class=\"username\">%s</span>?",
+                                HttpFrontend.escapeHtml(bukkitPlayer.getName())),
+                        HttpFrontend.escapeHtml(String.format(
+                                "%s gets access to the following permissions:",
+                                c.getName())),
+                        HtmlTemplate.li("permission-list__item", c.getScopes()),
+                        "./" + this.getRoute(),
                         HttpFrontend.escapeHtmlParam(login),
                         HttpFrontend.escapeHtmlParam(clientId));
             }
